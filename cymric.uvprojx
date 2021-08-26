@@ -387,10 +387,22 @@
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
             </File>
+            <File>
+              <FileName>cymric.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cymric.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
+          <Files>
+            <File>
+              <FileName>cymric.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cymric.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>::Device</GroupName>

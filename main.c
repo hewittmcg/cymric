@@ -3,6 +3,8 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_rcc.h"
 
+#include "cymric.h"
+
 // Initialize the GPIO pin corresponding to LED2
 static void prv_led_gpio_init(void) {
 	GPIO_InitTypeDef s_init_struct;
@@ -28,6 +30,7 @@ int main(void) {
 	
 	prv_led_gpio_init();
 
+	cymric_init();
 	// Blink LED2
 	while(1) {
 		LED_ON();
