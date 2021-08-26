@@ -31,6 +31,9 @@ int main(void) {
 	prv_led_gpio_init();
 
 	cymric_init();
+	
+	cymric_start();
+	
 	// Blink LED2
 	while(1) {
 		LED_ON();
