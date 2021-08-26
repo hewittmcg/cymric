@@ -12,6 +12,9 @@
 #define CYMRIC_THREAD_STACK_SIZE 1024
 #define CYMRIC_MAIN_STACK_SIZE 2048
 
+// Reset value of the main stack pointer (see p.g. 17 of Cortex-M4 Generic User Guide)
+#define CORTEX_M4_MSP_RST_ADDR 0x00000000ul
+
 // Task control block definition
 typedef struct {
 	uint32_t addr; // Base address of task stack

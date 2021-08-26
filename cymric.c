@@ -5,7 +5,7 @@ static Cymric_TCB s_tcbs[CYMRIC_MAX_TASKS];
 
 bool cymric_init(void) {
 	// Get the base address of the main stack 
-	uint32_t *main_stack_base_addr = 0x00000000;
+	uint32_t *main_stack_base_addr = CORTEX_M4_MSP_RST_ADDR;
 	uint32_t cur_stack_addr = *main_stack_base_addr + CYMRIC_MAIN_STACK_SIZE;
 	
 	// Initialize each TCB
