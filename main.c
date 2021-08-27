@@ -17,11 +17,6 @@ static void prv_led_gpio_init(void) {
 	HAL_GPIO_Init(GPIOA, &s_init_struct);
 }
 
-// Handler for SysTick interrupts (allows delays to work)
-void SysTick_Handler(void) {
-	HAL_IncTick();
-}
-
 #define LED_ON() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET))
 #define LED_OFF() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET))
 
@@ -32,7 +27,7 @@ int main(void) {
 
 	cymric_init();
 	
-	cymric_start();
+	// cymric_start();
 	
 	// Blink LED2
 	while(1) {

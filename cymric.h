@@ -29,7 +29,10 @@
 // Task control block definition
 typedef struct {
 	uint32_t addr; // Base address of task stack
+	uint32_t top_addr; // Address of top of task stack
 } Cymric_TCB;
+
+//void SysTick_Handler(void);
 
 // Function pointer for thread functions.
 typedef void (*CymricTaskFunction)(void *args);
@@ -42,3 +45,6 @@ void cymric_start(void);
 
 // Create a new task with the function pointer specified.  Returns true if successful, false otherwise.
 bool cymric_task_new(CymricTaskFunction func, void *args);
+
+// Run the scheduler.
+void cymric_run(void);
