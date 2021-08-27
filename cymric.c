@@ -3,6 +3,13 @@
 #include "cmsis_armcc.h"
 #include "stm32f4xx_hal.h"
 
+// Globals for use in context switches
+// These should be updated just prior to the context switch
+typedef struct {
+	uint8_t cur_task; // Current task
+	uint8_t next_task; // Task to switch to
+} ContextSwitchInfo;
+
 // Task control blocks
 static Cymric_TCB s_tcbs[CYMRIC_MAX_TASKS];
 
@@ -10,13 +17,6 @@ static Cymric_TCB s_tcbs[CYMRIC_MAX_TASKS];
 static uint8_t s_cur_alloc_id;
 
 static uint32_t s_ticks_ms;
-
-// Globals for use in context switches
-// These should be updated just prior to the context switch
-typedef struct {
-	uint8_t cur_task; // Current task
-	uint8_t next_task; // Task to switch to
-} ContextSwitchInfo;
 
 static ContextSwitchInfo s_switch_info;
 
@@ -49,10 +49,11 @@ static void prv_idle(void *args) {
 }
 
 bool cymric_init(void) {
-	// Get the base address of the main stack 
+	// Get the base address of the main stack and subtract 
 	uint32_t *main_stack_base_addr = CORTEX_M4_MSP_RST_ADDR;
-	uint32_t cur_stack_addr = *main_stack_base_addr - CYMRIC_MAIN_STACK_SIZE;
-	
+	uint32_t *test = (uint32_t*)*main_stack_base_addr;
+	uint32_t *cur_stack_addr =  test - CYMRIC_MAIN_STACK_SIZE / 4; // 4 bytes in uint32
+
 	// Initialize each TCB
 	for(uint8_t i = 0; i < CYMRIC_MAX_TASKS; i++) {
 		
@@ -63,7 +64,7 @@ bool cymric_init(void) {
 		s_tcbs[i].top_addr = cur_stack_addr;
 		
 		// Decrement for next TCB
-		cur_stack_addr -= CYMRIC_THREAD_STACK_SIZE;
+		cur_stack_addr -= CYMRIC_THREAD_STACK_SIZE / 4; // 4 bytes in uint32
 	}
 	
 	return true;
@@ -80,7 +81,7 @@ void cymric_start(void) {
 	__set_CONTROL(control);
 	
 	// Change PSP to the address of the idle task
-	__set_PSP(s_tcbs[CYMRIC_IDLE_ID].addr);
+	__set_PSP((uint32_t)s_tcbs[CYMRIC_IDLE_ID].addr);
 	
 	// Configure systick (TODO)
 	s_ticks_ms = 0;
@@ -93,10 +94,24 @@ void cymric_start(void) {
 bool cymric_task_new(CymricTaskFunction func, void *args) {
 	if(s_cur_alloc_id >= CYMRIC_MAX_TASKS) return false;
 	
-	// Configure initial registers for future context switching
-	uint32_t addr = s_tcbs[s_cur_alloc_id].addr;
+	// TODO: Configure initial registers for future context switching
+	uint32_t *addr = s_tcbs[s_cur_alloc_id].addr;
 	
+	// PSR
+	*addr = PSR_DEFAULT;
+	addr++;
 	
+	// PC - address of function
+	*addr = (uint32_t)&func;
+	
+	// R0 - address of args (located 6 indices above PC)
+	addr += 6;
+	*addr = (uint32_t)args;
+	
+	// Top of stack is 8 indices above R0 for the other 8 registers stored
+	s_tcbs[s_cur_alloc_id].top_addr = addr + 8;
+	
+	s_cur_alloc_id++;
 	return true;
 }
 
@@ -104,5 +119,3 @@ void cymric_run(void) {
 	// TODO: perform scheduling here
 	asm("nop");
 }
-
-

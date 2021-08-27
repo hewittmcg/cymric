@@ -26,10 +26,13 @@
 #define CORTEX_M4_CONTROL_nPRIV_PRIV 0
 #define CORTEX_M4_CONTROL_nPRIV_UNPRIV 1
 
+// PSR default address
+#define PSR_DEFAULT 0x01000000
+
 // Task control block definition
 typedef struct {
-	uint32_t addr; // Base address of task stack
-	uint32_t top_addr; // Address of top of task stack
+	uint32_t *addr; // Base address of task stack
+	uint32_t *top_addr; // Address of top of task stack
 } Cymric_TCB;
 
 //void SysTick_Handler(void);
