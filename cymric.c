@@ -67,6 +67,9 @@ bool cymric_init(void) {
 		cur_stack_addr -= CYMRIC_THREAD_STACK_SIZE / 4; // 4 bytes in uint32
 	}
 	
+	// First ID which application tasks can be allocated to
+	s_cur_alloc_id = CYMRIC_IDLE_ID + 1;
+	
 	return true;
 }
 
@@ -102,7 +105,7 @@ bool cymric_task_new(CymricTaskFunction func, void *args) {
 	addr++;
 	
 	// PC - address of function
-	*addr = (uint32_t)&func;
+	*addr = (uint32_t)func;
 	
 	// R0 - address of args (located 6 indices above PC)
 	addr += 6;

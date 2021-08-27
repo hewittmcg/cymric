@@ -20,12 +20,29 @@ static void prv_led_gpio_init(void) {
 #define LED_ON() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET))
 #define LED_OFF() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET))
 
+// Test tasks
+static void prv_task1(void *args) {
+	while(1) {
+		asm("nop");
+	}
+}
+
+static void prv_task2(void *args) {
+	while(1) {
+		asm("nop");
+	}
+}
+
 int main(void) {
 	HAL_Init();
 	
 	prv_led_gpio_init();
 
 	cymric_init();
+	
+	// Different func, same args
+	cymric_task_new(&prv_task1, &prv_task1);
+	cymric_task_new(&prv_task2, &prv_task1);
 	
 	// cymric_start();
 	
