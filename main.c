@@ -5,7 +5,7 @@
 
 #include "cymric.h"
 
-// Initialize the GPIO pin corresponding to LED2
+// Initialize the GPIO pin corresponding to LED2 on the nucleo board
 static void prv_led_gpio_init(void) {
 	GPIO_InitTypeDef s_init_struct;
 	__GPIOA_CLK_ENABLE();
@@ -47,12 +47,4 @@ int main(void) {
 	cymric_task_new(&prv_task2, &prv_task1);
 	
 	cymric_start();
-	
-	// Blink LED2
-	while(1) {
-		LED_ON();
-		HAL_Delay(500);
-		LED_OFF();
-		HAL_Delay(500);
-	}
 }

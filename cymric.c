@@ -11,8 +11,7 @@ typedef struct {
 	uint8_t next_task; // Task to switch to
 	
 	// These need to be double pointers so that the inlined asm in PendSV_Handler has 
-	// a consistent memory address to access when getting them from the s_tcbs array so that
-	// it can be updated directly from the asm function.
+	// a consistent memory address to access when getting them from the s_tcbs array.
 	uint32_t **cur_top_addr; // Pointer to current top address
 	uint32_t **next_top_addr; // Pointer to next top address
 } ContextSwitchInfo;
@@ -27,10 +26,11 @@ static uint32_t s_ticks_ms;
 
 ContextSwitchInfo s_switch_info;
 
-static uint8_t s_test_next_task = 1; // for testing context switches only
-
 // Flag to allow context switches etc
 static bool s_started_flag;
+
+// TODO: Run the task scheduler.  Should be called in SysTick_Handler().
+static inline void prv_schedule(void) {}
 
 // Handler for SysTick interrupts (allows delays to work)
 void SysTick_Handler(void) {
@@ -72,25 +72,22 @@ void SysTick_Handler(void) {
 
 // Handler for context switches (TODO)
 __asm void PendSV_Handler(void) {
-	//CPSID I
-	// Since this is an exception an as such occurs in handler mode,
+	// Since this is an exception and as such occurs in handler mode,
 	// need to get the PSP into a register to access it.
 	MRS R2,PSP 
 	
 	// Push R4-R11 onto the process stack
 	STMFD R2!,{R4-R11} 
 	
-	// TODO MAKE SURE THIS WORKS OK!!!! AND TEST CONTEXT SWITCHING!!!!!
 	// Copy current top of stack into the TCB for the current task
-	// TODO: need to fix this by using a double pointer or something so it updates the s_tcbs address
 	LDR R4,=__cpp(&s_switch_info.cur_top_addr)
-	LDR R4,[R4] // dereference? idk, TODO make sure this works!!!
+	LDR R4,[R4] // Dereference
 	STR R2,[R4]
 	
 	// Set the stack pointer to the top of stack of the new task
 	LDR R4,=__cpp(&s_switch_info.next_top_addr)
-	LDR R4,[R4] // TODO make sure works
-	LDR R2,[R4] // Idk if these two can be done in one line
+	LDR R4,[R4] // Dereference
+	LDR R2,[R4]
 	
 	// Pop R4-R11 from the stack
 	LDMFD R2!,{R4-R11}
@@ -98,7 +95,7 @@ __asm void PendSV_Handler(void) {
 	// Move R2 back to PSP
 	MSR PSP,R2
 	
-   	// return from handler
+  // Return from handler
 	NOP // padding, to remove a warning
 	BX		LR
 }
@@ -113,8 +110,7 @@ static void prv_idle(void *args) {
 bool cymric_init(void) {
 	// Get the base address of the main stack and subtract 
 	uint32_t *main_stack_base_addr = CORTEX_M4_MSP_RST_ADDR;
-	uint32_t *test = (uint32_t*)*main_stack_base_addr;
-	uint32_t *cur_stack_addr =  test - CYMRIC_MAIN_STACK_SIZE / 4; // 4 bytes in uint32
+	uint32_t *cur_stack_addr = (uint32_t*)*main_stack_base_addr - CYMRIC_MAIN_STACK_SIZE / 4; // 4 bytes in uint32
 
 	// Initialize each TCB
 	for(uint8_t i = 0; i < CYMRIC_MAX_TASKS; i++) {
@@ -183,9 +179,4 @@ bool cymric_task_new(CymricTaskFunction func, void *args) {
 	
 	s_cur_alloc_id++;
 	return true;
-}
-
-void cymric_run(void) {
-	// TODO: perform scheduling here
-	asm("nop");
 }

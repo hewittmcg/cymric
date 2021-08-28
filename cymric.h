@@ -12,6 +12,7 @@
 #define CYMRIC_THREAD_STACK_SIZE 1024
 #define CYMRIC_MAIN_STACK_SIZE 2048
 
+// TODO: figure out if these Cortex-M4-specific values are exposed by the HAL
 // Location of reset value of the main stack pointer (see p.g. 17 of Cortex-M4 Generic User Guide)
 #define CORTEX_M4_MSP_RST_ADDR 0x00000000ul
 
@@ -35,12 +36,10 @@ typedef struct {
 	uint32_t *top_addr; // Address of top of task stack
 } Cymric_TCB;
 
-//void SysTick_Handler(void);
-
-// Function pointer for thread functions.
+// Thread function definition.
 typedef void (*CymricTaskFunction)(void *args);
 
-// Initialize the OS.  Returns true if successful, false otherwise.
+// Initialize the RTOS.  Returns true if successful, false otherwise.
 bool cymric_init(void);
 
 // Start the RTOS.  This function transforms into the idle task and, as such, is blocking.
@@ -48,6 +47,3 @@ void cymric_start(void);
 
 // Create a new task with the function pointer specified.  Returns true if successful, false otherwise.
 bool cymric_task_new(CymricTaskFunction func, void *args);
-
-// Run the scheduler.
-void cymric_run(void);
