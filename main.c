@@ -44,7 +44,7 @@ int main(void) {
 	cymric_task_new(&prv_task1, &prv_task1);
 	cymric_task_new(&prv_task2, &prv_task1);
 	
-	// cymric_start();
+	cymric_start();
 	
 	// Blink LED2
 	while(1) {
