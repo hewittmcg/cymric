@@ -10,7 +10,7 @@ typedef struct {
 	uint8_t cur_task; // Current task
 	uint8_t next_task; // Task to switch to
 	
-	// These need to be double pointers so that the inlined asm in PendSV_Handler has 
+	// These need to be double pointers so that the asm in PendSV_Handler has 
 	// a consistent memory address to access when getting them from the s_tcbs array.
 	uint32_t **cur_top_addr; // Pointer to current top address
 	uint32_t **next_top_addr; // Pointer to next top address
@@ -24,35 +24,28 @@ static uint8_t s_cur_alloc_id;
 
 static uint32_t s_ticks_ms;
 
-ContextSwitchInfo s_switch_info;
+ContextSwitchInfo switch_info;
 
-// Flag to allow context switches etc
+// Flag to allow context switches and schedling to occur.
 static bool s_started_flag;
 
 // TODO: Run the task scheduler.  Should be called in SysTick_Handler().
-static inline void prv_schedule(void) {}
+// static inline void prv_schedule(void) {}
 
 // Handler for SysTick interrupts (allows delays to work)
 void SysTick_Handler(void) {
 	s_ticks_ms++;
 	HAL_IncTick(); // to be removed once unnecessary
 	
-	// Currently we just context switch here.  Not sure if there's 
-	// a better way of implementing the switch than this...
-	
 	// Testing just context switching between cur_task and next_task (TODO)
 	if(s_started_flag) {
 		if(s_ticks_ms % 1000 == 0) {
-			if(s_switch_info.cur_task == 0) {
-				s_switch_info.next_task = 1;
-			} else if(s_switch_info.cur_task == 2) {
-				//s_switch_info.cur_task = 2;
-				s_switch_info.next_task = 1;
-				// s_test_next_task = 1;
-			} else if(s_switch_info.cur_task == 1)  {
-				// s_switch_info.cur_task = 1;
-				s_switch_info.next_task = 2;
-				// s_test_next_task = 2;
+			if(switch_info.cur_task == 0) {
+				switch_info.next_task = 1;
+			} else if(switch_info.cur_task == 2) {
+				switch_info.next_task = 1;
+			} else if(switch_info.cur_task == 1)  {
+				switch_info.next_task = 2;
 			} else {
 				// Infinite loop, shouldn't get here
 				while(1) {
@@ -60,17 +53,19 @@ void SysTick_Handler(void) {
 				}
 			}
 			
-			s_switch_info.cur_top_addr = &s_tcbs[s_switch_info.cur_task].top_addr;
-			s_switch_info.next_top_addr = &s_tcbs[s_switch_info.next_task].top_addr;
+			switch_info.cur_top_addr = &s_tcbs[switch_info.cur_task].top_addr;
+			switch_info.next_top_addr = &s_tcbs[switch_info.next_task].top_addr;
 			
-			s_switch_info.cur_task = s_switch_info.next_task; // for future use
+			// Task being switched to is now the current task
+			switch_info.cur_task = switch_info.next_task;
+			
 			// Context switch by setting PendSV to pending
 			SCB->ICSR |= 1 << SCB_ICSR_PENDSVSET_Pos;
 		}
 	}
 }
 
-// Handler for context switches (TODO)
+// Handler for context switches
 __asm void PendSV_Handler(void) {
 	// Since this is an exception and as such occurs in handler mode,
 	// need to get the PSP into a register to access it.
@@ -80,24 +75,26 @@ __asm void PendSV_Handler(void) {
 	STMFD R2!,{R4-R11} 
 	
 	// Copy current top of stack into the TCB for the current task
-	LDR R4,=__cpp(&s_switch_info.cur_top_addr)
+	LDR R4,=__cpp(&switch_info.cur_top_addr)
 	LDR R4,[R4] // Dereference
 	STR R2,[R4]
 	
 	// Set the stack pointer to the top of stack of the new task
-	LDR R4,=__cpp(&s_switch_info.next_top_addr)
+	LDR R4,=__cpp(&switch_info.next_top_addr)
 	LDR R4,[R4] // Dereference
 	LDR R2,[R4]
 	
 	// Pop R4-R11 from the stack
 	LDMFD R2!,{R4-R11}
 	
-	// Move R2 back to PSP
+	// Update PSP
 	MSR PSP,R2
 	
-  // Return from handler
-	NOP // padding, to remove a warning
-	BX		LR
+	// Padding, to remove a warning
+	NOP 
+	
+	// Return from handler
+	BX LR
 }
 
 // Idle task
@@ -129,8 +126,8 @@ bool cymric_init(void) {
 	s_cur_alloc_id = CYMRIC_IDLE_ID + 1;
 	
 	// Configure IRQ priorities
-	NVIC_SetPriority(SysTick_IRQn, 0x00); // highest priority
-	NVIC_SetPriority(PendSV_IRQn, 0xFF); // lowest priority, to avoid nested interrupts
+	NVIC_SetPriority(SysTick_IRQn, CYMRIC_SYSTICK_PRIORITY);
+	NVIC_SetPriority(PendSV_IRQn, CYMRIC_PENDSV_PRIORITY);
 	
 	return true;
 }
