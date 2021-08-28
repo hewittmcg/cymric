@@ -23,13 +23,15 @@ static void prv_led_gpio_init(void) {
 // Test tasks
 static void prv_task1(void *args) {
 	while(1) {
-		asm("nop");
+		//asm("nop");
+		LED_ON();
 	}
 }
 
 static void prv_task2(void *args) {
 	while(1) {
-		asm("nop");
+		//asm("nop");
+		LED_OFF();
 	}
 }
 
