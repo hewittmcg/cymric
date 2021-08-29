@@ -107,7 +107,7 @@ static inline void prv_schedule(void) {
 		switch_info.cur_task = next->id; // now the next task
 		
 		// Initiate a context switch
-		SCB->ICSR |= 1 << SCB_ICSR_PENDSVSET_Pos;
+		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	}
 }
 
@@ -196,7 +196,7 @@ void cymric_start(void) {
 	
 	// Switch from MSP to PSP
 	uint32_t control = __get_CONTROL();
-	control |= 1 << CORTEX_M4_CONTROL_SPSEL;
+	control |= CONTROL_SPSEL_Msk;
 	__set_CONTROL(control);
 	
 	// Change PSP to the address of the idle task

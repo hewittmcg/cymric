@@ -15,20 +15,8 @@
 #define CYMRIC_THREAD_STACK_SIZE 1024
 #define CYMRIC_MAIN_STACK_SIZE 2048
 
-// TODO: figure out if these Cortex-M4-specific values are exposed by the HAL
 // Location of reset value of the main stack pointer (see p.g. 17 of Cortex-M4 Generic User Guide)
 #define CORTEX_M4_MSP_RST_ADDR 0x00000000ul
-
-// Offset of CONTROL register bits (see p.g. 22 of Cortex-M4 Generic User Guide)
-#define CORTEX_M4_CONTROL_SPSEL 1 // Currently active stack pointer
-#define CORTEX_M4_CONTROL_nPRIV 0 // Thread mode privilege level
-
-// CONTROL register bit storage values
-#define CORTEX_M4_CONTROL_SPSEL_MSP 0
-#define CORTEX_M4_CONTROL_SPSEL_PSP 1
-
-#define CORTEX_M4_CONTROL_nPRIV_PRIV 0
-#define CORTEX_M4_CONTROL_nPRIV_UNPRIV 1
 
 // PSR default address
 #define PSR_DEFAULT 0x01000000
