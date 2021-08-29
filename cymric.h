@@ -21,10 +21,10 @@
 // PSR default address
 #define PSR_DEFAULT 0x01000000
 
-// Lowest priority
+// Highest priority
 #define CYMRIC_SYSTICK_PRIORITY 0x00
 
-// Highest priority, to avoid nested interrupts affecting the stack
+// Lowest priority, to avoid nested interrupts affecting the stack
 #define CYMRIC_PENDSV_PRIORITY 0xFF
 
 typedef enum {
