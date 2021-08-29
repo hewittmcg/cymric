@@ -8,6 +8,9 @@
 // ID of the idle task
 #define CYMRIC_IDLE_ID 0
 
+// Interval to perform scheduling on
+#define CYMRIC_SCHED_INT_MS 1000
+
 // Size of task threads (in bytes)
 #define CYMRIC_THREAD_STACK_SIZE 1024
 #define CYMRIC_MAIN_STACK_SIZE 2048
@@ -43,15 +46,6 @@ typedef enum {
 	CYMRIC_PRI_HIGH,
 	NUM_CYMRIC_PRIORITIES,
 } CymricPriority;
-
-// Task control block definition
-typedef struct CymricTCB {
-	uint8_t id;
-	uint32_t *addr; // Base address of task stack
-	uint32_t *top_addr; // Address of top of task stack
-	CymricPriority pri;
-	struct CymricTCB *next; // For use in linked-list implementation
-} CymricTCB;
 
 // Thread function definition.
 typedef void (*CymricTaskFunction)(void *args);
