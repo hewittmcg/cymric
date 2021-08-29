@@ -242,3 +242,8 @@ bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri) {
 	s_cur_alloc_id++;
 	return true;
 }
+
+void cymric_delay(uint32_t delay_ms) {
+	uint32_t want = s_ticks_ms + delay_ms;
+	while(s_ticks_ms < want) {}
+}

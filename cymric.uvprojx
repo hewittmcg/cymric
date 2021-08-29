@@ -396,13 +396,6 @@
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
-          <Files>
-            <File>
-              <FileName>cymric.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\cymric.h</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>::Device</GroupName>

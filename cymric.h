@@ -9,7 +9,7 @@
 #define CYMRIC_IDLE_ID 0
 
 // Interval to perform scheduling on
-#define CYMRIC_SCHED_INT_MS 1000
+#define CYMRIC_SCHED_INT_MS 5
 
 // Size of task threads (in bytes)
 #define CYMRIC_THREAD_STACK_SIZE 1024
@@ -46,3 +46,6 @@ void cymric_start(void);
 
 // Create a new task with the function pointer, arguments, and priority specified.  Returns true if successful, false otherwise.
 bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri);
+
+// Delay for the time period specified.
+void cymric_delay(uint32_t delay_ms);
