@@ -392,6 +392,16 @@
               <FileType>1</FileType>
               <FilePath>.\cymric.c</FilePath>
             </File>
+            <File>
+              <FileName>cymric_semaphore.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cymric_semaphore.c</FilePath>
+            </File>
+            <File>
+              <FileName>cymric_semaphore.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cymric_semaphore.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -4,6 +4,7 @@
 #include "stm32f4xx_hal_rcc.h"
 
 #include "cymric.h"
+#include "cymric_semaphore.h"
 
 // Initialize the GPIO pin corresponding to LED2 on the nucleo board
 static void prv_led_gpio_init(void) {
@@ -31,6 +32,7 @@ static void prv_btn_gpio_init(void) {
 
 #define LED_ON() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET))
 #define LED_OFF() (HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET))
+#define LED_TOGGLE() (HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5))
 
 // Tasks for testing the RTOS.
 
@@ -51,6 +53,7 @@ static void prv_led_blink(void *args) {
 	}
 }
 
+// Read the button and adjust the blink LED depending on its state.
 static void prv_btn_read(void *args) {
 	uint32_t *blink_delays_ms = (uint32_t*)args;
 	while(1) {
@@ -65,6 +68,35 @@ static void prv_btn_read(void *args) {
 	}
 }
 
+
+// Toggle the LED when a semaphore is released.
+static void prv_led_toggle_sem(void *args) {
+	CymricSemaphore *sem = args;
+	while(1) {
+		LED_TOGGLE();
+		cymric_sem_wait(sem, CYMRIC_TIMEOUT_FOREVER);
+	}
+}
+
+// Signal the semaphore each time the button is pressed and released
+static void prv_btn_read_sem(void *args) {
+	CymricSemaphore *sem = args;
+	GPIO_PinState prev_state = GPIO_PIN_SET;
+	GPIO_PinState state = GPIO_PIN_SET;
+	while(1) {
+		state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+		if(state != prev_state) {
+			prev_state = state;
+			if(state == GPIO_PIN_RESET) {
+				cymric_sem_signal(sem);
+			}
+			cymric_delay(10); // Debouncing
+		}
+	}
+}
+
+static CymricSemaphore s_sem;
+
 int main(void) {
 	HAL_Init();
 	
@@ -73,8 +105,14 @@ int main(void) {
 	
 	cymric_init();
 	
-	cymric_task_new(&prv_led_blink, NULL, CYMRIC_PRI_HIGH);
-	cymric_task_new(&prv_btn_read, s_blink_interval_ms, CYMRIC_PRI_HIGH);
+	// Tasks to turn LED on/off using semaphores and button press
+	s_sem = cymric_sem_init(0);
+	cymric_task_new(&prv_led_toggle_sem, &s_sem, CYMRIC_PRI_HIGH);
+	cymric_task_new(&prv_btn_read_sem, &s_sem, CYMRIC_PRI_HIGH);
 	
 	cymric_start();
+		
+	// Tasks to vary LED blink rate based on button press (unreached, left uncommented to remove warnings)
+	cymric_task_new(&prv_led_blink, NULL, CYMRIC_PRI_HIGH);
+	cymric_task_new(&prv_btn_read, s_blink_interval_ms, CYMRIC_PRI_HIGH);
 }

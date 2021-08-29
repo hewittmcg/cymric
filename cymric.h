@@ -49,3 +49,6 @@ bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri);
 
 // Delay for the time period specified.
 void cymric_delay(uint32_t delay_ms);
+
+// Returns the current ticks counted by the OS.
+uint32_t cymric_get_ticks(void);

@@ -207,7 +207,7 @@ void cymric_start(void) {
 	s_started_flag = true;
 	
 	// Invoke idle task function
-	s_cur_alloc_id++;
+	//s_cur_alloc_id++;
 	prv_insert(&s_tcbs[CYMRIC_IDLE_ID], CYMRIC_PRI_IDLE);
 	prv_idle(0);
 }
@@ -246,4 +246,8 @@ bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri) {
 void cymric_delay(uint32_t delay_ms) {
 	uint32_t want = s_ticks_ms + delay_ms;
 	while(s_ticks_ms < want) {}
+}
+
+uint32_t cymric_get_ticks(void) {
+	return s_ticks_ms;
 }
