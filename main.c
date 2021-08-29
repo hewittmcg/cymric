@@ -43,8 +43,8 @@ int main(void) {
 	cymric_init();
 	
 	// Different func, same args
-	cymric_task_new(&prv_task1, &prv_task1);
-	cymric_task_new(&prv_task2, &prv_task1);
+	cymric_task_new(&prv_task1, &prv_task1, CYMRIC_PRI_HIGH);
+	cymric_task_new(&prv_task2, &prv_task1, CYMRIC_PRI_HIGH);
 	
 	cymric_start();
 }

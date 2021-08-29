@@ -17,7 +17,7 @@ typedef struct {
 } ContextSwitchInfo;
 
 // Task control blocks
-static Cymric_TCB s_tcbs[CYMRIC_MAX_TASKS];
+static CymricTCB s_tcbs[CYMRIC_MAX_TASKS];
 
 // Current task ID to be used for a new task
 static uint8_t s_cur_alloc_id;
@@ -29,8 +29,79 @@ ContextSwitchInfo switch_info;
 // Flag to allow context switches and schedling to occur.
 static bool s_started_flag;
 
+// List to contain all TCBs to run at a given priority
+// Need access to head for removal and tail for insertion
+typedef struct {
+	CymricTCB *head;
+	CymricTCB *tail;
+} List;
+
+// One list for each priority
+static List s_ready[NUM_CYMRIC_PRIORITIES];
+
+// Bitset of whether priority list has TCBs in it
+static uint32_t s_pri_mask;
+#define PRI_MASK_BITS 32
+
+// Insert a TCB into the list corresponding to its priority.
+static void prv_insert(CymricTCB *tcb, CymricPriority pri) {
+	if(s_ready[pri].tail) {
+		s_ready[pri].tail->next = tcb;
+	} else {
+		// List was empty
+		s_ready[pri].head = tcb;
+		s_pri_mask |= 1 << pri;
+	}
+	
+	// TCB is now the last in the list
+	s_ready[pri].tail = tcb;
+	tcb->next = NULL;
+}
+
+// Remove the TCB at the head of the priority list.  Returns a reference to this TCB.
+static CymricTCB *prv_remove(CymricPriority pri) {
+	if(!s_ready[pri].head) {
+		return NULL;
+	} else {
+		CymricTCB *ret = s_ready[pri].head;
+		s_ready[pri].head = s_ready[pri].head->next;
+		if(!s_ready[pri].head) {
+			// List is now empty
+			s_ready[pri].tail = NULL;
+			s_pri_mask &= ~(1 << pri);
+		}
+		return ret;
+	}
+}
+	
+
 // TODO: Run the task scheduler.  Should be called in SysTick_Handler().
-// static inline void prv_schedule(void) {}
+static inline void prv_schedule(void) {
+	// If the only task is the idle task, continue with it
+	if(s_pri_mask == 1 << CYMRIC_PRI_IDLE) {
+		return;
+	}
+	
+	// Get the highest task scheduled to run
+	uint8_t highest_sched = PRI_MASK_BITS - __clz(s_pri_mask) - 1;
+	
+	// If priority of current task is lower than or equal to highest available, insert it back, remove the 
+	// next available task, and set the current running task to the next available
+	if(s_tcbs[switch_info.cur_task].pri <= highest_sched) {
+		prv_insert(&s_tcbs[switch_info.cur_task], s_tcbs[switch_info.cur_task].pri);
+		CymricTCB *next = prv_remove((CymricPriority)highest_sched);
+		
+		// Update switch info for the context switch
+		switch_info.next_task = next->id; // TODO I think this can just be removed with this implementation
+		switch_info.next_top_addr = &next->top_addr;
+		
+		switch_info.cur_top_addr = &s_tcbs[switch_info.cur_task].top_addr;
+		switch_info.cur_task = next->id; // now the next task
+		
+		// Initiate a context switch IFF we need it
+		SCB->ICSR |= 1 << SCB_ICSR_PENDSVSET_Pos;
+	}
+}
 
 // Handler for SysTick interrupts (allows delays to work)
 void SysTick_Handler(void) {
@@ -40,28 +111,9 @@ void SysTick_Handler(void) {
 	// Testing just context switching between cur_task and next_task (TODO)
 	if(s_started_flag) {
 		if(s_ticks_ms % 1000 == 0) {
-			if(switch_info.cur_task == 0) {
-				switch_info.next_task = 1;
-			} else if(switch_info.cur_task == 2) {
-				switch_info.next_task = 1;
-			} else if(switch_info.cur_task == 1)  {
-				switch_info.next_task = 2;
-			} else {
-				// Infinite loop, shouldn't get here
-				while(1) {
-					asm("nop");
-				}
-			}
-			
-			switch_info.cur_top_addr = &s_tcbs[switch_info.cur_task].top_addr;
-			switch_info.next_top_addr = &s_tcbs[switch_info.next_task].top_addr;
-			
-			// Task being switched to is now the current task
-			switch_info.cur_task = switch_info.next_task;
-			
-			// Context switch by setting PendSV to pending
-			SCB->ICSR |= 1 << SCB_ICSR_PENDSVSET_Pos;
+			prv_schedule();
 		}
+		
 	}
 }
 
@@ -151,10 +203,13 @@ void cymric_start(void) {
 	
 	// Invoke idle task function
 	s_cur_alloc_id++;
+	prv_insert(&s_tcbs[CYMRIC_IDLE_ID], CYMRIC_PRI_IDLE);
 	prv_idle(0);
+	
+	
 }
 
-bool cymric_task_new(CymricTaskFunction func, void *args) {
+bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri) {
 	if(s_cur_alloc_id >= CYMRIC_MAX_TASKS) return false;
 	
 	// Configure initial registers for future context switching
@@ -173,6 +228,13 @@ bool cymric_task_new(CymricTaskFunction func, void *args) {
 	
 	// Top of stack is 8 indices below R0 for the other 8 registers stored
 	s_tcbs[s_cur_alloc_id].top_addr = addr - 8;
+	
+	// Update ID
+	s_tcbs[s_cur_alloc_id].id = s_cur_alloc_id;
+	
+	// Update priority and insert
+	s_tcbs[s_cur_alloc_id].pri = pri;
+	prv_insert(&s_tcbs[s_cur_alloc_id], pri);
 	
 	s_cur_alloc_id++;
 	return true;

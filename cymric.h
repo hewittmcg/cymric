@@ -36,11 +36,22 @@
 // Highest priority, to avoid nested interrupts affecting the stack
 #define CYMRIC_PENDSV_PRIORITY 0xFF
 
+typedef enum {
+	CYMRIC_PRI_IDLE = 0,
+	CYMRIC_PRI_LOW,
+	CYMRIC_PRI_MED,
+	CYMRIC_PRI_HIGH,
+	NUM_CYMRIC_PRIORITIES,
+} CymricPriority;
+
 // Task control block definition
-typedef struct {
+typedef struct CymricTCB {
+	uint8_t id;
 	uint32_t *addr; // Base address of task stack
 	uint32_t *top_addr; // Address of top of task stack
-} Cymric_TCB;
+	CymricPriority pri;
+	struct CymricTCB *next; // For use in linked-list implementation
+} CymricTCB;
 
 // Thread function definition.
 typedef void (*CymricTaskFunction)(void *args);
@@ -51,5 +62,5 @@ bool cymric_init(void);
 // Start the RTOS.  This function transforms into the idle task and, as such, is blocking.
 void cymric_start(void);
 
-// Create a new task with the function pointer specified.  Returns true if successful, false otherwise.
-bool cymric_task_new(CymricTaskFunction func, void *args);
+// Create a new task with the function pointer, arguments, and priority specified.  Returns true if successful, false otherwise.
+bool cymric_task_new(CymricTaskFunction func, void *args, CymricPriority pri);
