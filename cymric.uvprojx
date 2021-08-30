@@ -402,6 +402,16 @@
               <FileType>5</FileType>
               <FilePath>.\cymric_semaphore.h</FilePath>
             </File>
+            <File>
+              <FileName>cymric_mutex.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cymric_mutex.h</FilePath>
+            </File>
+            <File>
+              <FileName>cymric_mutex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cymric_mutex.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

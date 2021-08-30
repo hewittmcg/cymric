@@ -11,6 +11,9 @@
 // Interval to perform scheduling on
 #define CYMRIC_SCHED_INT_MS 5
 
+// Max value of a uint32_t
+#define CYMRIC_TIMEOUT_FOREVER 0xFFFFFFFF
+
 // Size of task threads (in bytes)
 #define CYMRIC_THREAD_STACK_SIZE 1024
 #define CYMRIC_MAIN_STACK_SIZE 2048
@@ -52,3 +55,6 @@ void cymric_delay(uint32_t delay_ms);
 
 // Returns the current ticks counted by the OS.
 uint32_t cymric_get_ticks(void);
+
+// Continue scheduling to allow other threads to run.
+void cymric_thread_yield(void);

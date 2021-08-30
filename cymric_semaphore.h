@@ -15,8 +15,6 @@ typedef enum {
 	NUM_CYMRIC_SEM_STATUSES,
 } CymricSemStatus;
 
-#define CYMRIC_TIMEOUT_FOREVER ((1ul << 31) - 1) // TODO replace with __UINT32_MAX__
-
 // Initialize a semaphore with the initial count given.
 CymricSemaphore cymric_sem_init(uint32_t initial_count);
 

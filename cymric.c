@@ -251,3 +251,8 @@ void cymric_delay(uint32_t delay_ms) {
 uint32_t cymric_get_ticks(void) {
 	return s_ticks_ms;
 }
+
+void cymric_thread_yield(void) {
+	// Just run the scheduler early to push the thread back to the end of the line
+	prv_schedule();
+}

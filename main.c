@@ -5,6 +5,7 @@
 
 #include "cymric.h"
 #include "cymric_semaphore.h"
+#include "cymric_mutex.h"
 
 // Initialize the GPIO pin corresponding to LED2 on the nucleo board
 static void prv_led_gpio_init(void) {
@@ -68,6 +69,7 @@ static void prv_btn_read(void *args) {
 	}
 }
 
+static CymricSemaphore s_sem;
 
 // Toggle the LED when a semaphore is released.
 static void prv_led_toggle_sem(void *args) {
@@ -95,7 +97,34 @@ static void prv_btn_read_sem(void *args) {
 	}
 }
 
-static CymricSemaphore s_sem;
+// Threads to blink the LED at a different rate using mutexes:
+static CymricMutex s_mut;
+
+static void prv_led_blink_fast_mut(void *args) {
+	CymricMutex *mut = args;
+	while(1) {
+		cymric_mut_take(mut, CYMRIC_TIMEOUT_FOREVER);
+		for(uint16_t i = 0; i < 6; i++) {
+			LED_TOGGLE();
+			cymric_delay(100);
+		}
+		cymric_mut_release(mut);
+		cymric_thread_yield();
+	}
+}
+
+static void prv_led_blink_slow_mut(void *args) {
+	CymricMutex *mut = args;
+	while(1) {
+		cymric_mut_take(mut, CYMRIC_TIMEOUT_FOREVER);
+		for(uint16_t i = 0; i < 6; i++) {
+			LED_TOGGLE();
+			cymric_delay(1000);
+		}
+		cymric_mut_release(mut);
+		cymric_thread_yield();
+	}
+}
 
 int main(void) {
 	HAL_Init();
@@ -105,14 +134,20 @@ int main(void) {
 	
 	cymric_init();
 	
-	// Tasks to turn LED on/off using semaphores and button press
-	s_sem = cymric_sem_init(0);
-	cymric_task_new(&prv_led_toggle_sem, &s_sem, CYMRIC_PRI_HIGH);
-	cymric_task_new(&prv_btn_read_sem, &s_sem, CYMRIC_PRI_HIGH);
+	// Tasks to vary LED blink rate by alternating between two functions, protecting the LED-blinking code
+	// using mutexes.
+	s_mut = cymric_mut_init(CYMRIC_MUT_STATE_RELEASED);
+	cymric_task_new(&prv_led_blink_fast_mut, &s_mut, CYMRIC_PRI_HIGH);
+	cymric_task_new(&prv_led_blink_slow_mut, &s_mut, CYMRIC_PRI_HIGH);
 	
 	cymric_start();
 		
 	// Tasks to vary LED blink rate based on button press (unreached, left uncommented to remove warnings)
 	cymric_task_new(&prv_led_blink, NULL, CYMRIC_PRI_HIGH);
 	cymric_task_new(&prv_btn_read, s_blink_interval_ms, CYMRIC_PRI_HIGH);
+
+	// Tasks to turn LED on/off using semaphores and button press (unreached, left uncommented to remove warnings)
+	s_sem = cymric_sem_init(0);
+	cymric_task_new(&prv_led_toggle_sem, &s_sem, CYMRIC_PRI_HIGH);
+	cymric_task_new(&prv_btn_read_sem, &s_sem, CYMRIC_PRI_HIGH);
 }
