@@ -10,7 +10,7 @@ typedef enum {
 } CymricMutState;
 
 typedef struct {
-    CymricMutState state;
+    volatile CymricMutState state;
     uint8_t id;
 } CymricMutex;
 
