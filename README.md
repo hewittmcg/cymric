@@ -44,3 +44,6 @@ Cymric was written for a STM32F446RE that I had lying around, so some things wil
 - Include mutex + semaphore documentation in README.
 - Remove logging files from IDE to clean up repository.
 - Include cymric_delay documentation in README.
+- Better build system so that functional tests can be written more easily.
+- Test `cymric_thread_yield()`.
+- Move cymric source files into their own directory.
